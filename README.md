@@ -1,4 +1,4 @@
-# Hành trình của một tư tưởng
+# Bảo tàng Tư tưởng Hồ Chí Minh
 
 Bảo tàng ảo Three.js về quá trình hình thành và phát triển Tư tưởng Hồ Chí Minh, xây dựng theo cấu trúc năm giai đoạn của *Giáo trình Tư tưởng Hồ Chí Minh*, Bộ Giáo dục và Đào tạo, 2019.
 

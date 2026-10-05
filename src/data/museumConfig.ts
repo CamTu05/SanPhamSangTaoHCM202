@@ -8,23 +8,23 @@ export const BOARD_TYPOGRAPHY = {
   periodSize: 30,
   periodLineHeight: 38,
   titleSize: 46,
-  titleLineHeight: 52,
+  titleLineHeight: 50,
   titleMaxLines: 4,
   bodySize: 27,
-  bodyLineHeight: 42,
-  bodyMaxLines: 8,
+  bodyLineHeight: 37,
+  bodyMaxLines: 12,
   numberY: 78,
   periodY: 130,
   titleTop: 202,
-  separatorY: 466,
-  bodyTop: 515
+  separatorY: 448,
+  bodyTop: 478
 } as const
 
 export const museumConfig = {
   colors: {
     ivory: '#d5cabb', wood: '#493428', dark: '#1b1714', bronze: '#a48252', warm: '#ffd59a', text: '#f0e9dd', secondary: '#beb3a3'
   },
-  corridor: { width: 4.4, height: 3.8, start: 8, end: -94 },
+  corridor: { width: 4.4, height: 3.8, start: 13, end: -94 },
   hall: { centerZ: -101, radius: 8, height: 6 },
   player: { eyeHeight: 1.68, radius: .4, speed: 2.6 },
   years: [

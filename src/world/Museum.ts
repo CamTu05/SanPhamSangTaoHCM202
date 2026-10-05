@@ -80,7 +80,7 @@ export class Museum {
     const side = stage.board.side
     const x = side === 'left' ? -2.04 : 2.04
     const frame = this.mesh(new THREE.BoxGeometry(.07, 2.5, 3.4), this.materials.bronze, x, 2, z)
-    const surface = boardPlane({ number: `0${stage.index}`, period: stage.board.period, title: stage.board.title, body: stage.board.content }, 3.25, 2.35)
+    const surface = boardPlane({ number: `0${stage.index}`, period: stage.board.period, title: stage.board.title.replaceAll('\n', ' '), body: stage.board.content }, 3.25, 2.35)
     surface.position.set(side === 'left' ? x + .041 : x - .041, 2, z)
     surface.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2
     this.group.add(surface)
@@ -114,10 +114,19 @@ export class Museum {
     const x = side === 'left' ? -2.03 : 2.03
     const map = new THREE.Group(); map.position.set(x, 2.15, z); map.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2
     map.add(new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.15, .06), this.materials.dark))
-    const points = [new THREE.Vector3(-1.55, -.45, .04), new THREE.Vector3(-.2, -.05, .04), new THREE.Vector3(1.5, .48, .04)]
-    const geometry = new THREE.BufferGeometry().setFromPoints(points); geometry.setDrawRange(0, 0)
-    const route = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: config.colors.warm })); map.add(route)
-    points.forEach((point, index) => { const dot = new THREE.Mesh(new THREE.CircleGeometry(.055, 20), new THREE.MeshBasicMaterial({ color: index === 2 ? config.colors.warm : config.colors.bronze })); dot.position.copy(point).add(new THREE.Vector3(0, 0, .01)); map.add(dot) })
+    const curve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(-1.5, -.38, .04),
+      new THREE.Vector3(0, .58, .04),
+      new THREE.Vector3(1.5, .38, .04)
+    )
+    const routePoints = curve.getPoints(48)
+    const geometry = new THREE.BufferGeometry().setFromPoints(routePoints); geometry.setDrawRange(0, 0)
+    const route = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: config.colors.warm, transparent: true, opacity: .82 })); map.add(route)
+    const endpoints = [routePoints[0], routePoints[routePoints.length - 1]]
+    endpoints.forEach((point, index) => {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(.055, .085, 32), new THREE.MeshBasicMaterial({ color: index === 1 ? config.colors.warm : config.colors.bronze, transparent: true, opacity: .9 }))
+      ring.position.copy(point).add(new THREE.Vector3(0, 0, .01)); map.add(ring)
+    })
     const labels = textPlane(exhibitionContent.map.labels, 3.95, 1.9, { size: 28, align: 'center' }); labels.position.z = .05; map.add(labels); this.group.add(map)
     stage.artifacts.forEach((artifact, index) => this.buildArchiveMount(artifact, side, z + 1.6 + index * .7, 1.1))
     collisions.addBox(this.sideX(side, 1.72) - .45, this.sideX(side, 1.72) + .45, z - 2.25, z + 2.25)
@@ -132,7 +141,7 @@ export class Museum {
       const documentZ = z + (index - 1) * 1.35
       const document = this.mesh(new THREE.BoxGeometry(.5, .04, .85), this.materials.paper, x, 1.03, documentZ)
       this.interactives.push({ mesh: document, artifact })
-      const label = textPlane(`${artifact.code}\n${artifact.title}\n${artifact.year}`, .7, .35, { size: 23, background: '#211b17', align: 'center' })
+      const label = textPlane(`${artifact.code}\n${artifact.title}\n${artifact.year}`, .82, .58, { size: 46, lineHeight: 54, background: '#211b17', align: 'center' })
       label.position.set(side === 'left' ? x + .4 : x - .4, .72, documentZ); label.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2; this.group.add(label)
     })
     collisions.addBox(x - .55, x + .55, z - 2.4, z + 2.4); base.castShadow = true; glass.renderOrder = 2
@@ -159,7 +168,7 @@ export class Museum {
   private buildArchiveMount(artifact: Artifact, side: 'left' | 'right', z: number, y: number) {
     const x = side === 'left' ? -2.02 : 2.02
     const document = this.mesh(new THREE.BoxGeometry(.05, .7, .52), this.materials.paper, x, y, z)
-    const label = textPlane(`${artifact.code}\n${artifact.title}`, .65, .32, { size: 22, background: '#211b17', align: 'center' })
+    const label = textPlane(`${artifact.code}\n${artifact.title}`, .82, .52, { size: 44, lineHeight: 52, background: '#211b17', align: 'center' })
     label.position.set(side === 'left' ? x + .03 : x - .03, y - .62, z); label.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2; this.group.add(label)
     this.interactives.push({ mesh: document, artifact })
   }
@@ -177,8 +186,8 @@ export class Museum {
 
   private buildStageLighting(stage: Chapter, z: number) {
     const boardX = this.sideX(stage.board.side, 1.2); const exhibitX = this.sideX(stage.exhibition.side, 1.25)
-    const boardLight = new THREE.SpotLight(config.colors.warm, stage.index === 4 ? 4 : 6, 7, .82, .8, 1.5)
-    boardLight.position.set(-boardX * .2, 3.25, z); boardLight.target.position.set(boardX, 1.9, z)
+    const boardLight = new THREE.SpotLight(config.colors.warm, stage.index === 4 ? 4 : 6, 7, .98, .82, 1.5)
+    boardLight.position.set(-boardX * .2, 3.45, z); boardLight.target.position.set(boardX, 2.15, z)
     const exhibitLight = new THREE.SpotLight(config.colors.warm, stage.index === 4 ? 5 : 9, 7, .7, .7, 1.4)
     exhibitLight.position.set(-exhibitX * .15, 3.45, z); exhibitLight.target.position.set(exhibitX, .95, z)
     exhibitLight.castShadow = stage.index === 1 || stage.index === 3; exhibitLight.shadow.mapSize.set(512, 512)

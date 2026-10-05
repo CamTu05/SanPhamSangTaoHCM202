@@ -32,7 +32,7 @@ export class Experience {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace; this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.renderer.toneMappingExposure = .78
     this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
     this.scene.background = new THREE.Color('#100e0c'); this.scene.fog = new THREE.FogExp2('#15110e', .019)
-    this.camera.position.set(0, config.player.eyeHeight, 6)
+    this.camera.position.set(0, config.player.eyeHeight, 8)
     this.controls = new Controls(this.camera, this.collisions, config.player.speed, this.reducedMotion)
     this.museum = new Museum(this.scene, this.collisions)
     window.addEventListener('resize', () => this.resize())
@@ -113,7 +113,7 @@ export class Experience {
   private openCredits() { this.ui.showCredits() }
   private restart() {
     this.finalTimers.forEach((timer) => window.clearTimeout(timer)); this.finalTimers = []
-    this.camera.position.set(0, config.player.eyeHeight, 6); this.controls.reset(); this.audio.reset()
+    this.camera.position.set(0, config.player.eyeHeight, 8); this.controls.reset(); this.audio.reset()
     this.currentChapter = -1; this.nearbyIndex = -1; this.narrationTimer = 0; this.finalStarted = false
     this.renderer.toneMappingExposure = .78; this.museum.updateMap(0); this.museum.quadrantLights.forEach((light) => light.intensity = 0); this.ui.reset()
     if (this.audio.has(exhibitionContent.prologue.audio)) void this.audio.play(exhibitionContent.prologue.audio)

@@ -4,9 +4,9 @@ import { CollisionSystem } from '../systems/CollisionSystem'
 export class Controls {
   private keys = new Set<string>()
   private dragging = false
-  private yaw = Math.PI
+  private yaw = 0
   private pitch = 0
-  private targetYaw = Math.PI
+  private targetYaw = 0
   private targetPitch = 0
   private velocity = new THREE.Vector3()
   private movement = new THREE.Vector3()
@@ -33,11 +33,11 @@ export class Controls {
 
   reset() {
     this.clearInput()
-    this.yaw = Math.PI
+    this.yaw = 0
     this.pitch = 0
-    this.targetYaw = Math.PI
+    this.targetYaw = 0
     this.targetPitch = 0
-    this.camera.rotation.set(0, Math.PI, 0, 'YXZ')
+    this.camera.rotation.set(0, 0, 0, 'YXZ')
   }
 
   private clearInput() {
