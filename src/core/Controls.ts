@@ -33,11 +33,15 @@ export class Controls {
 
   reset() {
     this.clearInput()
-    this.yaw = 0
-    this.pitch = 0
-    this.targetYaw = 0
-    this.targetPitch = 0
-    this.camera.rotation.set(0, 0, 0, 'YXZ')
+    this.setOrientation(0, 0)
+  }
+
+  setOrientation(yaw: number, pitch: number) {
+    this.yaw = yaw
+    this.pitch = pitch
+    this.targetYaw = yaw
+    this.targetPitch = pitch
+    this.camera.rotation.set(pitch, yaw, 0, 'YXZ')
   }
 
   private clearInput() {
