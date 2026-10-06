@@ -132,9 +132,9 @@ export const exhibitionContent = {
   credits: {
     project: 'BẢO TÀNG TƯ TƯỞNG HỒ CHÍ MINH',
     subtitle: 'Bảo tàng ảo về quá trình hình thành và phát triển Tư tưởng Hồ Chí Minh',
-    course: '[BỔ SUNG]',
-    team: '[BỔ SUNG]',
-    lecturer: '[BỔ SUNG]',
+    course: 'HCM202 - TƯ TƯỞNG HỒ CHÍ MINH',
+    team: 'Nhóm 1',
+    lecturer: 'LyNT36',
     source: 'Giáo trình Tư tưởng Hồ Chí Minh\nBộ Giáo dục và Đào tạo, 2019'
   }
 } as const
