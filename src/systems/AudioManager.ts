@@ -86,6 +86,12 @@ export class AudioManager {
     this.state = 'finished'; this.duckAmbient(false); this.emit()
   }
 
+  stopNarration() {
+    this.cancelFade(this.narration)
+    if (this.narration.element) { this.narration.element.pause(); this.narration.element.currentTime = 0 }
+    this.narration.element = undefined; this.state = 'finished'; this.duckAmbient(false); this.emit()
+  }
+
   toggleMute() { this.setMuted(!this.muted); return this.muted }
   setMuted(muted: boolean) {
     this.muted = muted

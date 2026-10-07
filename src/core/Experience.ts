@@ -10,6 +10,10 @@ import { Controls } from './Controls'
 
 type GuidedStep = { label: string; position: THREE.Vector3; target: THREE.Vector3; narration?: string; waitForNarration?: boolean; duration?: number; finalRotation?: boolean }
 
+const BOARD_AUDIO_RADIUS = 3
+const INTRO_START_Z = 8
+const INTRO_END_Z = INTRO_START_Z - 10
+
 export class Experience {
   private renderer: THREE.WebGLRenderer
   private scene = new THREE.Scene()
@@ -24,10 +28,8 @@ export class Experience {
   private currentChapter = -1
   private nearbyIndex = -1
   private finalStarted = false
-  private quietZoneEntered = false
   private boardCandidate = -1
-  private activeBoardNarration = -1
-  private boardDwell = 0
+  private activeNarrationZone = -1
   private ambientZone: 'corridor' | 'final' = 'corridor'
   private mapMilestonePlayed = false
   private guided = false
@@ -43,7 +45,7 @@ export class Experience {
   private reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
 
   constructor() {
-    this.ui = new UI({ start: (mode) => this.start(mode), close: () => this.closePanels(), mute: () => this.audio.toggleMute(), narration: () => { void this.audio.toggleNarration() }, transcript: () => this.openTranscript(), credits: () => this.openCredits(), restart: () => this.restart(), nextTourStep: () => this.nextGuidedStep() })
+    this.ui = new UI({ start: (mode) => this.start(mode), close: () => this.closePanels(), mute: () => this.audio.toggleMute(), narration: () => this.toggleNarration(), transcript: () => this.openTranscript(), credits: () => this.openCredits(), restart: () => this.restart(), nextTourStep: () => this.nextGuidedStep() })
     this.audio.subscribe((snapshot) => { this.guidedNarrationState = snapshot.state; this.ui.updateAudio(snapshot) })
     this.renderer = new THREE.WebGLRenderer({ canvas: this.ui.q<HTMLCanvasElement>('#museum-canvas'), antialias: true, powerPreference: 'high-performance' })
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); this.renderer.setSize(innerWidth, innerHeight)
@@ -68,7 +70,6 @@ export class Experience {
     this.started = true; this.guided = mode === 'guided'; this.controls.enabled = !this.guided; this.ui.explore()
     void this.audio.playAmbient(audioAssets.ambient.corridor)
     if (this.guided) { this.guidedSteps = this.createGuidedSteps(); this.ui.setGuidedTour(true); this.advanceGuidedStep() }
-    else void this.audio.playNarration(exhibitionContent.prologue.audio)
   }
 
   private update() {
@@ -77,8 +78,8 @@ export class Experience {
     if (this.guided) this.updateGuidedTour(delta)
     else this.controls.update(delta)
     if (this.started) {
-      this.updateChapter(); if (!this.guided) this.updateBoardNarration(delta); this.updateQuietZone(); this.updateAmbient(); this.updateInteraction()
-      this.museum.updateTransitionDoor(this.camera.position.z, delta, this.reducedMotion); this.updateFinal()
+      this.updateChapter(); if (!this.guided) this.updateNarrationZone(); this.updateAmbient(); this.updateInteraction()
+      this.museum.updateTransitionDoor(this.camera.position.z, delta, this.reducedMotion); if (this.guided) this.updateFinal()
     }
     this.renderer.render(this.scene, this.camera)
   }
@@ -179,39 +180,24 @@ export class Experience {
     if (mapProgress >= .75 && !this.mapMilestonePlayed) { this.mapMilestonePlayed = true; void this.audio.playSfx(audioAssets.sfx.mapPoint) }
   }
 
-  private updateBoardNarration(delta: number) {
-    let nearest = -1; let nearestDistance = Infinity
+  private updateNarrationZone() {
+    const z = this.camera.position.z
+    let zone = z <= INTRO_START_Z && z >= INTRO_END_Z ? 0 : -1
+    this.boardCandidate = -1
     chapters.forEach((chapter, index) => {
       const boardX = chapter.board.side === 'left' ? -2.04 : 2.04
       const boardZ = (chapter.start + chapter.end) / 2
-      const distance = Math.hypot(this.camera.position.x - boardX, this.camera.position.z - boardZ)
-      if (distance < nearestDistance) { nearest = index; nearestDistance = distance }
+      if (Math.hypot(this.camera.position.x - boardX, z - boardZ) <= BOARD_AUDIO_RADIUS) {
+        zone = index + 1; this.boardCandidate = index
+      }
     })
-    if (this.activeBoardNarration >= 0) {
-      const activeBoardZ = (chapters[this.activeBoardNarration].start + chapters[this.activeBoardNarration].end) / 2
-      if (this.camera.position.z < activeBoardZ - 1) {
-        void this.audio.fadeOutNarration(800)
-        this.activeBoardNarration = -1
-      }
-    }
-    if (this.boardCandidate >= 0 && nearestDistance > 4.8) { this.boardCandidate = -1; this.boardDwell = 0 }
-    if (nearestDistance <= 3) {
-      if (this.boardCandidate !== nearest) { this.boardCandidate = nearest; this.boardDwell = 0; this.audio.selectNarration(chapters[nearest].audio) }
-      this.boardDwell += delta
-      const chapter = chapters[nearest]
-      if (this.boardDwell >= 1 && this.audio.has(chapter.audio) && !this.audio.isVisited(chapter.audio)) {
-        this.activeBoardNarration = nearest
-        void this.audio.playNarration(chapter.audio)
-      }
-    }
-  }
-
-  private updateQuietZone() {
-    const diChuc = chapters[4].artifacts.find((artifact) => artifact.id === 'di-chuc')
-    if (!diChuc) return
-    const inside = Math.abs(this.camera.position.z - diChuc.z) < 2.1
-    if (inside && !this.quietZoneEntered) { this.quietZoneEntered = true; void this.audio.fadeOutNarration(900) }
-    if (!inside && Math.abs(this.camera.position.z - diChuc.z) > 3.5) this.quietZoneEntered = false
+    if (Math.hypot(this.camera.position.x, z - config.hall.centerZ) < 2.65) zone = chapters.length + 1
+    if (zone === this.activeNarrationZone) return
+    this.audio.stopNarration(); this.activeNarrationZone = zone; this.ui.setNarrationControl(zone >= 0)
+    if (zone < 0) return
+    const path = zone === 0 ? exhibitionContent.prologue.audio : zone <= chapters.length ? chapters[zone - 1].audio : exhibitionContent.finalHall.audio
+    this.audio.selectNarration(path); void this.audio.playNarration(path, false)
+    if (zone === chapters.length + 1) this.revealFinalHall()
   }
 
   private updateAmbient() {
@@ -234,12 +220,18 @@ export class Experience {
   private updateFinal() {
     const distance = Math.hypot(this.camera.position.x, this.camera.position.z - config.hall.centerZ)
     if (distance < 2.65 && !this.finalStarted) {
-      this.finalStarted = true; this.audio.selectNarration(exhibitionContent.finalHall.audio)
-      const interval = this.reducedMotion ? 0 : 650
-      this.museum.quadrantLights.forEach((light, index) => this.finalTimers.push(window.setTimeout(() => { light.intensity = 9 }, index * interval + (this.reducedMotion ? 0 : 300))))
-      this.finalTimers.push(window.setTimeout(() => { this.renderer.toneMappingExposure = .93; this.ui.showFinalActions() }, this.reducedMotion ? 0 : 3000))
-      void this.audio.playNarration(exhibitionContent.finalHall.audio); void this.audio.playSfx(audioAssets.sfx.finalReveal)
+      this.audio.selectNarration(exhibitionContent.finalHall.audio); void this.audio.playNarration(exhibitionContent.finalHall.audio)
+      this.revealFinalHall()
     }
+  }
+
+  private revealFinalHall() {
+    if (this.finalStarted) return
+    this.finalStarted = true
+    const interval = this.reducedMotion ? 0 : 650
+    this.museum.quadrantLights.forEach((light, index) => this.finalTimers.push(window.setTimeout(() => { light.intensity = 9 }, index * interval + (this.reducedMotion ? 0 : 300))))
+    this.finalTimers.push(window.setTimeout(() => { this.renderer.toneMappingExposure = .93; this.ui.showFinalActions() }, this.reducedMotion ? 0 : 3000))
+    void this.audio.playSfx(audioAssets.sfx.finalReveal)
   }
 
   private keydown(event: KeyboardEvent) {
@@ -260,12 +252,16 @@ export class Experience {
   }
 
   private openTranscript() { const context = this.transcriptContext(); this.ui.showTranscript(context.title, context.transcript) }
+  private toggleNarration() {
+    if (!this.guided && this.activeNarrationZone < 0) return
+    void this.audio.toggleNarration()
+  }
   private closePanels() { this.ui.closePanels() }
   private openCredits() { this.ui.showCredits() }
   private restart() {
     this.finalTimers.forEach((timer) => window.clearTimeout(timer)); this.finalTimers = []
     this.camera.position.set(0, config.player.eyeHeight, 8); this.controls.reset(); this.audio.reset()
-    this.currentChapter = -1; this.nearbyIndex = -1; this.boardCandidate = -1; this.activeBoardNarration = -1; this.boardDwell = 0; this.finalStarted = false; this.quietZoneEntered = false; this.mapMilestonePlayed = false; this.ambientZone = 'corridor'
+    this.currentChapter = -1; this.nearbyIndex = -1; this.boardCandidate = -1; this.activeNarrationZone = 0; this.finalStarted = false; this.mapMilestonePlayed = false; this.ambientZone = 'corridor'
     this.guided = false; this.guidedSteps = []; this.guidedIndex = -1; this.guidedPhase = 'waiting'; this.guidedVelocity.set(0, 0, 0); this.guidedWait = 0; this.guidedRotation = 0
     this.renderer.toneMappingExposure = .78; this.museum.updateMap(0); this.museum.updateTransitionDoor(8, 1, true); this.museum.quadrantLights.forEach((light) => light.intensity = 0); this.ui.reset()
     this.audio.selectNarration(exhibitionContent.prologue.audio); void this.audio.playNarration(exhibitionContent.prologue.audio); void this.audio.playAmbient(audioAssets.ambient.corridor)

@@ -41,8 +41,9 @@ export class UI {
   progress(value: number) { this.q('.load-track i').style.width = `${value * 100}%` }
   ready() { this.state = 'START_SCREEN'; this.q('#loading').classList.add('hidden'); this.q('#start').classList.remove('hidden'); this.q('#start-button').focus() }
   explore() { this.state = 'EXPLORING'; this.q('#start').classList.add('hidden'); this.q('#hud').classList.remove('hidden'); window.setTimeout(() => this.q('#help').classList.add('faded'), 15000) }
-  setChapter(chapter?: Chapter) { this.hudChapter.innerHTML = chapter ? `0${chapter.index} / 05<br><span>${chapter.period}</span>` : 'MỞ ĐẦU' }
+  setChapter(chapter?: Chapter) { this.hudChapter.innerHTML = chapter ? `0${chapter.index} / 05<br><span>${chapter.period}</span>` : '' }
   setPrompt(show: boolean) { this.prompt.textContent = show ? 'E - KHÁM PHÁ' : ''; this.q('#focus').classList.toggle('active', show) }
+  setNarrationControl(show: boolean) { this.q('#narration').classList.toggle('hidden', !show) }
   updateAudio(snapshot: AudioSnapshot) {
     const sound = this.q<HTMLButtonElement>('#audio'); sound.textContent = snapshot.muted ? 'ÂM THANH: TẮT' : 'ÂM THANH'; sound.setAttribute('aria-pressed', String(snapshot.muted)); sound.setAttribute('aria-label', snapshot.muted ? 'Bật âm thanh' : 'Tắt âm thanh')
     const narration = this.q<HTMLButtonElement>('#narration'); narration.disabled = !snapshot.available
@@ -59,7 +60,7 @@ export class UI {
   closePanels() { if (!this.panelOpen) return; this.root.querySelectorAll<HTMLElement>('.panel').forEach((panel) => { panel.classList.remove('open'); panel.hidden = true }); this.state = 'EXPLORING'; this.previousFocus?.focus() }
   showFinalActions() { this.finalActions.classList.add('visible') }
   setGuidedTour(active: boolean, label = '') { const controls = this.q('#guided-controls'); controls.classList.toggle('visible', active); this.q('#guided-progress').textContent = label }
-  reset() { this.closePanels(); this.finalActions.classList.remove('visible'); this.setGuidedTour(false); this.setPrompt(false); this.setChapter() }
+  reset() { this.closePanels(); this.finalActions.classList.remove('visible'); this.setGuidedTour(false); this.setNarrationControl(true); this.setPrompt(false); this.setChapter() }
   get panelOpen() { return this.state === 'ARTIFACT_OPEN' || this.state === 'CREDITS' }
   private openPanel(panel: HTMLElement, state: AppState) { this.previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined; this.root.querySelectorAll<HTMLElement>('.panel').forEach((item) => { item.classList.remove('open'); item.hidden = true }); panel.hidden = false; requestAnimationFrame(() => panel.classList.add('open')); this.state = state; panel.querySelector<HTMLElement>('.close')?.focus() }
 }
