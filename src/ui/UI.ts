@@ -2,7 +2,7 @@ import { exhibitionContent, type Artifact, type Chapter } from '../data/chapters
 import type { AudioSnapshot } from '../systems/AudioManager'
 
 type AppState = 'LOADING' | 'START_SCREEN' | 'EXPLORING' | 'ARTIFACT_OPEN' | 'CREDITS'
-type UIHandlers = { start: (mode: 'free' | 'guided') => void; close: () => void; mute: () => boolean; narration: () => void; transcript: () => void; credits: () => void; restart: () => void; nextTourStep: () => void }
+type UIHandlers = { start: (mode: 'free' | 'guided') => void; close: () => void; mute: () => boolean; narration: () => void; transcript: () => void; credits: () => void; restart: () => void; nextTourStep: () => void; exitGuided: () => void }
 
 export class UI {
   readonly root: HTMLElement
@@ -26,12 +26,12 @@ export class UI {
       <aside id="artifact" class="panel" role="dialog" aria-modal="true" aria-labelledby="artifact-title" hidden><button class="close" aria-label="Đóng">×</button><p class="eyebrow artifact-code"></p><h2 id="artifact-title" class="artifact-title"></h2><p class="artifact-year"></p><div class="placeholder">HÌNH ẢNH<br>ĐANG ĐƯỢC BỔ SUNG</div><p class="artifact-description"></p><hr><p class="artifact-stage muted"></p></aside>
       <aside id="credits" class="panel" role="dialog" aria-modal="true" aria-labelledby="credits-title" hidden><button class="close" aria-label="Đóng">×</button><p class="eyebrow">GIỚI THIỆU DỰ ÁN</p><h2 id="credits-title">${credits.project}</h2><p>${credits.subtitle}</p><p>Dự án học phần: ${credits.course}<br>Nhóm thực hiện: ${credits.team}<br>Giảng viên: ${credits.lecturer}</p><hr><p>Nguồn nội dung chính:<br>${credits.source.replace('\n', '<br>')}</p></aside>
       <aside id="transcript" class="panel" role="dialog" aria-modal="true" aria-labelledby="transcript-title" hidden><button class="close" aria-label="Đóng">×</button><p class="eyebrow">NỘI DUNG THUYẾT MINH</p><h2 id="transcript-title"></h2><div class="transcript-content"></div></aside>
-      <div id="guided-controls"><span id="guided-progress"></span><button id="guided-next">TIẾP THEO →</button></div>
+      <div id="guided-controls"><span id="guided-progress"></span><div class="guided-actions"><button id="guided-exit" title="Thoát chế độ hướng dẫn viên để tự do tham quan">THOÁT HƯỚNG DẪN</button><button id="guided-next" title="Đến điểm tham quan tiếp theo">TIẾP THEO →</button></div></div>
       <div id="final-actions"><button id="restart">↻ THAM QUAN LẠI</button><button id="credits-button">GIỚI THIỆU DỰ ÁN</button></div>
       <div id="mobile" class="screen hidden"><div><h2>TRẢI NGHIỆM MÁY TÍNH</h2><p>Trải nghiệm này được thiết kế tối ưu cho màn hình máy tính.</p><button id="continue">TIẾP TỤC</button></div></div>`
     this.prompt = this.q('#prompt'); this.hudChapter = this.q('#chapter'); this.artifactPanel = this.q('#artifact'); this.finalActions = this.q('#final-actions')
     this.q('#start-button').onclick = () => handlers.start('free'); this.q('#guided-button').onclick = () => handlers.start('guided'); this.q('#audio').onclick = () => handlers.mute(); this.q('#narration').onclick = handlers.narration
-    this.q('#restart').onclick = handlers.restart; this.q('#credits-button').onclick = handlers.credits; this.q('#transcript-button').onclick = handlers.transcript; this.q('#guided-next').onclick = handlers.nextTourStep
+    this.q('#restart').onclick = handlers.restart; this.q('#credits-button').onclick = handlers.credits; this.q('#transcript-button').onclick = handlers.transcript; this.q('#guided-next').onclick = handlers.nextTourStep; this.q('#guided-exit').onclick = handlers.exitGuided
     this.root.querySelectorAll('.close').forEach((button) => button.addEventListener('click', handlers.close))
     this.q('#continue').onclick = () => this.q('#mobile').classList.add('hidden')
     if (innerWidth < 768) this.q('#mobile').classList.remove('hidden')
