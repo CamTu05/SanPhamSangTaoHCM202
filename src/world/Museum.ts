@@ -113,10 +113,24 @@ export class Museum {
     const x = this.sideX(stage.exhibition.side, 1.2)
     const desk = this.mesh(new THREE.BoxGeometry(1.75, .12, 1.25), this.materials.floor, x, .82, z)
     for (const dx of [-.7, .7]) for (const dz of [-.48, .48]) this.mesh(new THREE.BoxGeometry(.1, .8, .1), this.materials.floor, x + dx, .4, z + dz)
-    for (let i = 0; i < 3; i++) this.mesh(new THREE.BoxGeometry(.38, .04, .25), this.materials.paper, x - .25 + i * .18, .92 + i * .045, z)
-    this.mesh(new THREE.CylinderGeometry(.1, .12, .05, 20), this.materials.dark, x + .48, .9, z - .2)
+    const cover = new THREE.MeshStandardMaterial({ color: '#44251c', roughness: .82 })
+    const pages = new THREE.MeshStandardMaterial({ color: '#c8b996', roughness: .96 })
+    const book = new THREE.Group(); book.position.set(x - .22, .93, z + .03); book.rotation.y = -.18
+    const leftCover = new THREE.Mesh(new THREE.BoxGeometry(.42, .025, .56), cover); leftCover.position.x = -.215
+    const rightCover = leftCover.clone(); rightCover.position.x = .215
+    const leftPages = new THREE.Mesh(new THREE.BoxGeometry(.39, .035, .52), pages); leftPages.position.set(-.205, .026, 0); leftPages.rotation.z = -.035
+    const rightPages = leftPages.clone(); rightPages.position.x = .205; rightPages.rotation.z = .035
+    const spine = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, .55, 12), cover); spine.rotation.x = Math.PI / 2
+    book.add(leftCover, rightCover, leftPages, rightPages, spine); this.group.add(book)
+    const inkstone = this.mesh(new THREE.CylinderGeometry(.14, .16, .055, 24), this.materials.dark, x + .48, .91, z - .2)
+    const ink = new THREE.Mesh(new THREE.CylinderGeometry(.105, .105, .012, 24), new THREE.MeshStandardMaterial({ color: '#080706', roughness: .35 })); ink.position.set(x + .48, .944, z - .2); this.group.add(ink)
+    const brush = new THREE.Group(); brush.position.set(x + .12, 1.12, z - .4); brush.rotation.x = -Math.PI * 2 / 3
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(.012, .016, .62, 12), this.materials.bronze)
+    const bristles = [new THREE.Vector2(0, -.075), new THREE.Vector2(.012, -.062), new THREE.Vector2(.032, -.018), new THREE.Vector2(.036, .025), new THREE.Vector2(.026, .055), new THREE.Vector2(.016, .065)]
+    const tip = new THREE.Mesh(new THREE.LatheGeometry(bristles, 20), new THREE.MeshStandardMaterial({ color: '#211a16', roughness: 1 })); tip.position.y = -.375
+    brush.add(handle, tip); this.group.add(brush)
     stage.artifacts.forEach((artifact, index) => this.buildArchiveMount(artifact, x > 0 ? 'right' : 'left', z + (index - 1) * .75, 1.85))
-    collisions.addBox(x - 1, x + 1, z - .78, z + .78); desk.castShadow = true
+    collisions.addBox(x - 1, x + 1, z - .78, z + .78); desk.castShadow = true; inkstone.castShadow = true
   }
 
   private buildJourneyExhibition(stage: Chapter, z: number, collisions: CollisionSystem) {
@@ -159,12 +173,17 @@ export class Museum {
   }
 
   private buildReturnArchive(stage: Chapter, z: number, collisions: CollisionSystem) {
-    const side = stage.exhibition.side; const x = this.sideX(side, 1.52)
-    const plinth = this.mesh(new THREE.BoxGeometry(.9, .65, 2.6), this.materials.dark, x, .325, z)
-    this.mesh(new THREE.BoxGeometry(.72, .48, .35), this.materials.floor, x, .9, z - .7)
-    this.mesh(new THREE.BoxGeometry(.5, .035, .72), this.materials.paper, x, .86, z + .25)
-    stage.artifacts.forEach((artifact) => this.buildArchiveMount(artifact, side, z + .7, 1.9))
-    collisions.addBox(x - .58, x + .58, z - 1.5, z + 1.5); plinth.castShadow = true
+    const side = stage.exhibition.side; const x = this.sideX(side, 1.42)
+    const stone = new THREE.MeshStandardMaterial({ color: '#716b60', roughness: 1 })
+    const slab = this.mesh(new THREE.BoxGeometry(1.35, .18, 1.9, 3, 1, 3), stone, x, .82, z)
+    slab.rotation.y = -.06; slab.rotation.z = .025
+    const leftSupport = this.mesh(new THREE.CylinderGeometry(.25, .34, .72, 7), stone, x - .43, .39, z - .5)
+    const rightSupport = this.mesh(new THREE.CylinderGeometry(.24, .32, .67, 7), stone, x + .4, .36, z + .48)
+    leftSupport.rotation.z = -.08; rightSupport.rotation.z = .06
+    const paper = this.mesh(new THREE.PlaneGeometry(.72, .95), this.materials.paper, x, .922, z + .08); paper.rotation.x = -Math.PI / 2; paper.rotation.z = -.12
+    const pencil = this.mesh(new THREE.CylinderGeometry(.01, .012, .55, 10), this.materials.bronze, x + .28, .94, z - .12); pencil.rotation.z = Math.PI / 2; pencil.rotation.y = -.35
+    stage.artifacts.forEach((artifact) => this.buildArchiveMount(artifact, side, z + 1.15, 1.9))
+    collisions.addBox(x - .78, x + .78, z - 1.12, z + 1.12); slab.castShadow = true; leftSupport.castShadow = true; rightSupport.castShadow = true
   }
 
   private buildWallTimeline(stage: Chapter, z: number, collisions: CollisionSystem) {
