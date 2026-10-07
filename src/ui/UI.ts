@@ -2,7 +2,7 @@ import { exhibitionContent, type Artifact, type Chapter } from '../data/chapters
 import type { AudioSnapshot } from '../systems/AudioManager'
 
 type AppState = 'LOADING' | 'START_SCREEN' | 'EXPLORING' | 'ARTIFACT_OPEN' | 'CREDITS'
-type UIHandlers = { start: (mode: 'free' | 'guided', narration?: boolean) => void; home: () => void; close: () => void; mute: () => boolean; narration: () => void; transcript: () => void; credits: () => void; restart: () => void; nextTourStep: () => void; exitGuided: () => void }
+type UIHandlers = { start: (mode: 'free' | 'guided', narration?: boolean) => void; home: () => void; theme: () => void; close: () => void; mute: () => boolean; narration: () => void; transcript: () => void; credits: () => void; restart: () => void; nextTourStep: () => void; exitGuided: () => void }
 
 export class UI {
   readonly root: HTMLElement
@@ -19,7 +19,7 @@ export class UI {
     this.root = root
     const credits = exhibitionContent.credits
     this.root.innerHTML = `
-      <canvas id="museum-canvas" aria-label="Không gian bảo tàng ảo"></canvas>
+      <canvas id="museum-canvas" aria-label="Không gian bảo tàng ảo"></canvas><button id="theme-button" aria-label="Chuyển sang giao diện sáng" aria-pressed="false">☀</button>
       <div id="loading" class="screen" role="status"><div><p class="eyebrow">BẢO TÀNG ẢO</p><h1>BẢO TÀNG TƯ TƯỞNG HỒ CHÍ MINH</h1><div class="load-track"><i></i></div><p class="muted">Đang chuẩn bị không gian triển lãm...</p></div></div>
       <div id="start" class="screen hidden"><div><p class="eyebrow">BẢO TÀNG ẢO</p><h1>BẢO TÀNG<br>TƯ TƯỞNG<br>HỒ CHÍ MINH</h1><p>Quá trình hình thành và phát triển<br>Tư tưởng Hồ Chí Minh</p><div class="visit-modes"><button id="start-button">TỰ THAM QUAN</button><button id="guided-button">ĐI CÙNG HƯỚNG DẪN VIÊN</button></div><p class="instructions">WASD để di chuyển · Kéo chuột để quan sát</p></div></div>
       <div id="visit-confirm" class="screen hidden"><div><p class="eyebrow">TRƯỚC KHI BẮT ĐẦU</p><h2 id="visit-confirm-title"></h2><p id="visit-confirm-copy"></p><div class="visit-modes" id="visit-confirm-actions"></div><button id="visit-confirm-back">← QUAY LẠI</button></div></div>
@@ -31,7 +31,7 @@ export class UI {
       <div id="final-actions"><button id="restart">↻ THAM QUAN LẠI</button><button id="credits-button">GIỚI THIỆU DỰ ÁN</button></div>
       <div id="mobile" class="screen hidden"><div><h2>TRẢI NGHIỆM MÁY TÍNH</h2><p>Trải nghiệm này được thiết kế tối ưu cho màn hình máy tính.</p><button id="continue">TIẾP TỤC</button></div></div>`
     this.prompt = this.q('#prompt'); this.hudChapter = this.q('#chapter'); this.artifactPanel = this.q('#artifact'); this.finalActions = this.q('#final-actions')
-    this.q('#start-button').onclick = () => this.showVisitConfirm('free', handlers); this.q('#guided-button').onclick = () => this.showVisitConfirm('guided', handlers); this.q('#visit-confirm-back').onclick = () => this.hideVisitConfirm(); this.q('#home-button').onclick = handlers.home; this.q('#audio').onclick = () => handlers.mute(); this.q('#narration').onclick = handlers.narration
+    this.q('#start-button').onclick = () => this.showVisitConfirm('free', handlers); this.q('#guided-button').onclick = () => this.showVisitConfirm('guided', handlers); this.q('#visit-confirm-back').onclick = () => this.hideVisitConfirm(); this.q('#home-button').onclick = handlers.home; this.q('#theme-button').onclick = handlers.theme; this.q('#audio').onclick = () => handlers.mute(); this.q('#narration').onclick = handlers.narration
     this.q('#restart').onclick = handlers.restart; this.q('#credits-button').onclick = handlers.credits; this.q('#transcript-button').onclick = handlers.transcript; this.q('#guided-next').onclick = handlers.nextTourStep; this.q('#guided-exit').onclick = handlers.exitGuided
     this.root.querySelectorAll('.close').forEach((button) => button.addEventListener('click', handlers.close))
     this.q('#continue').onclick = () => this.q('#mobile').classList.add('hidden')
@@ -57,6 +57,7 @@ export class UI {
   private hideVisitConfirm() { this.q('#visit-confirm').classList.add('hidden'); this.q('#start').classList.remove('hidden'); this.q('#start-button').focus() }
   explore() { this.state = 'EXPLORING'; this.q('#start').classList.add('hidden'); this.q('#visit-confirm').classList.add('hidden'); this.q('#hud').classList.remove('hidden'); window.setTimeout(() => this.q('#help').classList.add('faded'), 15000) }
   setHomeControl(show: boolean) { this.q('#home-button').classList.toggle('hidden', !show) }
+  setTheme(theme: 'dark' | 'light') { const button = this.q<HTMLButtonElement>('#theme-button'); const light = theme === 'light'; button.textContent = light ? '☾' : '☀'; button.setAttribute('aria-pressed', String(light)); button.setAttribute('aria-label', light ? 'Chuyển sang giao diện tối' : 'Chuyển sang giao diện sáng') }
   showHome() { this.state = 'START_SCREEN'; this.q('#hud').classList.add('hidden'); this.q('#visit-confirm').classList.add('hidden'); this.q('#start').classList.remove('hidden'); this.q('#start-button').focus() }
   setChapter(chapter?: Chapter) { this.hudChapter.innerHTML = chapter ? `0${chapter.index} / 05<br><span>${chapter.period}</span>` : '' }
   setPrompt(show: boolean) { this.prompt.textContent = show ? 'E - KHÁM PHÁ' : ''; this.q('#focus').classList.toggle('active', show) }

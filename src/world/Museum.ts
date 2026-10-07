@@ -10,10 +10,12 @@ export class Museum {
   readonly group = new THREE.Group()
   readonly interactives: Interactive[] = []
   readonly chapterLights: THREE.Light[] = []
+  private chapterLightIntensities: number[] = []
   readonly quadrantLights: THREE.SpotLight[] = []
   readonly transitionDoors: THREE.Group[] = []
   readonly transitionDoorZ: number
   readonly mapRoute: THREE.Line
+  private hemisphere?: THREE.HemisphereLight
   private materials = {
     wall: new THREE.MeshStandardMaterial({ color: config.colors.ivory, roughness: .94 }),
     floor: new THREE.MeshStandardMaterial({ color: config.colors.wood, roughness: .72 }),
@@ -226,7 +228,7 @@ export class Museum {
     const exhibitZ = stage.exhibition.type === 'wall-timeline' ? z + 2.1 : z
     exhibitLight.position.set(-exhibitX * .15, 3.45, exhibitZ); exhibitLight.target.position.set(exhibitX, stage.index === 5 ? 1.1 : .95, exhibitZ)
     exhibitLight.castShadow = stage.index === 1 || stage.index === 3; exhibitLight.shadow.mapSize.set(512, 512)
-    this.group.add(boardLight, boardLight.target, exhibitLight, exhibitLight.target); this.chapterLights.push(boardLight, exhibitLight)
+    this.group.add(boardLight, boardLight.target, exhibitLight, exhibitLight.target); this.chapterLights.push(boardLight, exhibitLight); this.chapterLightIntensities.push(boardLight.intensity, exhibitLight.intensity)
   }
 
   private buildTransitionDoorway() {
@@ -275,7 +277,19 @@ export class Museum {
     const center = new THREE.SpotLight(config.colors.warm, 14, 12, .5, .65, 1.4); center.position.set(0, 5.6, centerZ); center.target.position.set(0, 0, centerZ); center.castShadow = true; center.shadow.mapSize.set(1024, 1024); this.group.add(center, center.target)
   }
 
-  private buildAmbientLighting() { this.scene.add(new THREE.HemisphereLight('#6f604e', '#17120f', .22)) }
+  private buildAmbientLighting() { this.hemisphere = new THREE.HemisphereLight('#6f604e', '#17120f', .22); this.scene.add(this.hemisphere) }
+
+  applyTheme(theme: 'dark' | 'light') {
+    const light = theme === 'light'
+    this.materials.wall.color.set(light ? '#eee5d8' : config.colors.ivory)
+    this.materials.floor.color.set(light ? '#765846' : config.colors.wood)
+    this.materials.dark.color.set(light ? '#4a4038' : config.colors.dark)
+    this.materials.paper.color.set(light ? '#e2d3b6' : '#b9aa91')
+    this.materials.glass.color.set(light ? '#d8d0c5' : '#8b8175')
+    this.chapterLights.forEach((item, index) => { item.color.set(light ? '#fff0d2' : config.colors.warm); item.intensity = this.chapterLightIntensities[index] * (light ? .72 : 1) })
+    this.quadrantLights.forEach((item) => item.color.set(light ? '#fff0d2' : config.colors.warm))
+    if (this.hemisphere) { this.hemisphere.color.set(light ? '#fff4df' : '#6f604e'); this.hemisphere.groundColor.set(light ? '#8b7664' : '#17120f'); this.hemisphere.intensity = light ? 1.15 : .22 }
+  }
 
   updateMap(progress: number) {
     const count = this.mapRoute.geometry.getAttribute('position').count

@@ -48,12 +48,14 @@ export class Experience {
   private guidedElapsed = 0
   private guidedSpeedMultiplier = 1
   private finalTimers: number[] = []
+  private theme: 'dark' | 'light' = localStorage.getItem('museum-theme') === 'light' ? 'light' : 'dark'
   private reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
 
   constructor() {
     this.ui = new UI({
       start: (mode, narration) => this.start(mode, narration),
       home: () => this.home(),
+      theme: () => this.toggleTheme(),
       close: () => this.closePanels(),
       mute: () => this.audio.toggleMute(),
       narration: () => this.toggleNarration(),
@@ -71,7 +73,7 @@ export class Experience {
     this.scene.background = new THREE.Color('#100e0c'); this.scene.fog = new THREE.FogExp2('#15110e', .019)
     this.camera.position.set(0, config.player.eyeHeight, 8)
     this.controls = new Controls(this.camera, this.collisions, config.player.speed, this.reducedMotion)
-    this.museum = new Museum(this.scene, this.collisions)
+    this.museum = new Museum(this.scene, this.collisions); this.applyTheme()
     window.addEventListener('resize', () => this.resize()); window.addEventListener('keydown', (event) => this.keydown(event))
     void this.load(); this.renderer.setAnimationLoop(() => this.update())
   }
@@ -484,7 +486,7 @@ export class Experience {
     this.finalStarted = true
     const interval = this.reducedMotion ? 0 : 650
     this.museum.quadrantLights.forEach((light, index) => this.finalTimers.push(window.setTimeout(() => { light.intensity = 9 }, index * interval + (this.reducedMotion ? 0 : 300))))
-    this.finalTimers.push(window.setTimeout(() => { this.renderer.toneMappingExposure = .93; this.ui.showFinalActions() }, this.reducedMotion ? 0 : 3000))
+    this.finalTimers.push(window.setTimeout(() => { this.renderer.toneMappingExposure = this.theme === 'light' ? 1.18 : .93; this.ui.showFinalActions() }, this.reducedMotion ? 0 : 3000))
     void this.audio.playSfx(audioAssets.sfx.finalReveal)
   }
 
@@ -514,6 +516,13 @@ export class Experience {
     void this.audio.toggleNarration()
   }
   private closePanels() { this.ui.closePanels() }
+  private toggleTheme() { this.theme = this.theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('museum-theme', this.theme); this.applyTheme() }
+  private applyTheme() {
+    const light = this.theme === 'light'; document.documentElement.dataset.theme = this.theme; this.ui.setTheme(this.theme); this.museum.applyTheme(this.theme)
+    this.scene.background = new THREE.Color(light ? '#d8cdbc' : '#100e0c'); this.scene.fog = new THREE.FogExp2(light ? '#d8cdbc' : '#15110e', light ? .012 : .019)
+    this.renderer.toneMappingExposure = light ? 1.08 : .78
+    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', light ? '#eee5d8' : '#1b1714')
+  }
   private openCredits() { this.ui.showCredits() }
   private home() {
     this.restart(false); this.started = false; this.controls.enabled = false; this.audio.reset(); this.audio.selectNarration(exhibitionContent.prologue.audio); this.ui.setHomeControl(false); this.ui.showHome()
@@ -524,7 +533,7 @@ export class Experience {
     this.currentChapter = -1; this.nearbyIndex = -1; this.boardCandidate = -1; this.activeNarrationZone = 0; this.finalStarted = false; this.mapMilestonePlayed = false; this.ambientZone = 'corridor'
     this.guided = false; this.guidedSteps = []; this.guidedIndex = -1; this.guidedPhase = 'waiting'; this.guidedVelocity.set(0, 0, 0); this.guidedWait = 0; this.guidedRotation = 0
     this.guidedCurve = null; this.guidedElapsed = 0; this.guidedSpeedMultiplier = 1
-    this.renderer.toneMappingExposure = .78; this.museum.updateMap(0); this.museum.updateTransitionDoor(8, 1, true); this.museum.quadrantLights.forEach((light) => light.intensity = 0); this.ui.reset()
+    this.renderer.toneMappingExposure = this.theme === 'light' ? 1.08 : .78; this.museum.updateMap(0); this.museum.updateTransitionDoor(8, 1, true); this.museum.quadrantLights.forEach((light) => light.intensity = 0); this.ui.reset()
     this.audio.selectNarration(exhibitionContent.prologue.audio)
     if (playAudio && this.visitMode === 'guided') {
       this.guided = true; this.controls.enabled = false; this.guidedSteps = this.createGuidedSteps(); this.ui.setHomeControl(false); this.ui.setGuidedTour(true); this.advanceGuidedStep(); void this.audio.playAmbient(audioAssets.ambient.corridor)
