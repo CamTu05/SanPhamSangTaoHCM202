@@ -281,14 +281,15 @@ export class Museum {
 
   applyTheme(theme: 'dark' | 'light') {
     const light = theme === 'light'
-    this.materials.wall.color.set(light ? '#eee5d8' : config.colors.ivory)
-    this.materials.floor.color.set(light ? '#765846' : config.colors.wood)
-    this.materials.dark.color.set(light ? '#4a4038' : config.colors.dark)
-    this.materials.paper.color.set(light ? '#e2d3b6' : '#b9aa91')
-    this.materials.glass.color.set(light ? '#d8d0c5' : '#8b8175')
-    this.chapterLights.forEach((item, index) => { item.color.set(light ? '#fff0d2' : config.colors.warm); item.intensity = this.chapterLightIntensities[index] * (light ? .72 : 1) })
-    this.quadrantLights.forEach((item) => item.color.set(light ? '#fff0d2' : config.colors.warm))
-    if (this.hemisphere) { this.hemisphere.color.set(light ? '#fff4df' : '#6f604e'); this.hemisphere.groundColor.set(light ? '#8b7664' : '#17120f'); this.hemisphere.intensity = light ? 1.15 : .22 }
+    this.materials.wall.color.set(light ? '#ead9c2' : config.colors.ivory)
+    this.materials.floor.color.set(light ? '#8a674b' : config.colors.wood)
+    this.materials.dark.color.set(light ? '#6a5137' : config.colors.dark)
+    this.materials.bronze.color.set(light ? '#b7986c' : config.colors.bronze)
+    this.materials.paper.color.set(light ? '#f0dfbf' : '#b9aa91')
+    this.materials.glass.color.set(light ? '#dac7aa' : '#8b8175')
+    this.chapterLights.forEach((item, index) => { item.color.set(light ? '#ffe6b8' : config.colors.warm); item.intensity = this.chapterLightIntensities[index] * (light ? .72 : 1) })
+    this.quadrantLights.forEach((item) => item.color.set(light ? '#ffe6b8' : config.colors.warm))
+    if (this.hemisphere) { this.hemisphere.color.set(light ? '#fff3dc' : '#6f604e'); this.hemisphere.groundColor.set(light ? '#8a674b' : '#17120f'); this.hemisphere.intensity = light ? 1.08 : .22 }
   }
 
   updateMap(progress: number) {

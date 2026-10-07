@@ -486,7 +486,7 @@ export class Experience {
     this.finalStarted = true
     const interval = this.reducedMotion ? 0 : 650
     this.museum.quadrantLights.forEach((light, index) => this.finalTimers.push(window.setTimeout(() => { light.intensity = 9 }, index * interval + (this.reducedMotion ? 0 : 300))))
-    this.finalTimers.push(window.setTimeout(() => { this.renderer.toneMappingExposure = this.theme === 'light' ? 1.18 : .93; this.ui.showFinalActions() }, this.reducedMotion ? 0 : 3000))
+    this.finalTimers.push(window.setTimeout(() => { this.renderer.toneMappingExposure = this.theme === 'light' ? 1.12 : .93; this.ui.showFinalActions() }, this.reducedMotion ? 0 : 3000))
     void this.audio.playSfx(audioAssets.sfx.finalReveal)
   }
 
@@ -519,9 +519,9 @@ export class Experience {
   private toggleTheme() { this.theme = this.theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('museum-theme', this.theme); this.applyTheme() }
   private applyTheme() {
     const light = this.theme === 'light'; document.documentElement.dataset.theme = this.theme; this.ui.setTheme(this.theme); this.museum.applyTheme(this.theme)
-    this.scene.background = new THREE.Color(light ? '#d8cdbc' : '#100e0c'); this.scene.fog = new THREE.FogExp2(light ? '#d8cdbc' : '#15110e', light ? .012 : .019)
-    this.renderer.toneMappingExposure = light ? 1.08 : .78
-    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', light ? '#eee5d8' : '#1b1714')
+    this.scene.background = new THREE.Color(light ? '#dac7aa' : '#100e0c'); this.scene.fog = new THREE.FogExp2(light ? '#dac7aa' : '#15110e', light ? .012 : .019)
+    this.renderer.toneMappingExposure = light ? 1.04 : .78
+    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', light ? '#ead9c2' : '#1b1714')
   }
   private openCredits() { this.ui.showCredits() }
   private home() {
@@ -533,7 +533,7 @@ export class Experience {
     this.currentChapter = -1; this.nearbyIndex = -1; this.boardCandidate = -1; this.activeNarrationZone = 0; this.finalStarted = false; this.mapMilestonePlayed = false; this.ambientZone = 'corridor'
     this.guided = false; this.guidedSteps = []; this.guidedIndex = -1; this.guidedPhase = 'waiting'; this.guidedVelocity.set(0, 0, 0); this.guidedWait = 0; this.guidedRotation = 0
     this.guidedCurve = null; this.guidedElapsed = 0; this.guidedSpeedMultiplier = 1
-    this.renderer.toneMappingExposure = this.theme === 'light' ? 1.08 : .78; this.museum.updateMap(0); this.museum.updateTransitionDoor(8, 1, true); this.museum.quadrantLights.forEach((light) => light.intensity = 0); this.ui.reset()
+    this.renderer.toneMappingExposure = this.theme === 'light' ? 1.04 : .78; this.museum.updateMap(0); this.museum.updateTransitionDoor(8, 1, true); this.museum.quadrantLights.forEach((light) => light.intensity = 0); this.ui.reset()
     this.audio.selectNarration(exhibitionContent.prologue.audio)
     if (playAudio && this.visitMode === 'guided') {
       this.guided = true; this.controls.enabled = false; this.guidedSteps = this.createGuidedSteps(); this.ui.setHomeControl(false); this.ui.setGuidedTour(true); this.advanceGuidedStep(); void this.audio.playAmbient(audioAssets.ambient.corridor)
