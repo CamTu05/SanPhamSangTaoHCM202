@@ -34,6 +34,7 @@ export class Experience {
   private mapMilestonePlayed = false
   private guided = false
   private visitMode: 'free' | 'guided' = 'free'
+  private automaticNarration = true
   private guidedSteps: GuidedStep[] = []
   private guidedIndex = -1
   private guidedPhase: 'moving' | 'waiting' | 'rotating' = 'waiting'
@@ -51,7 +52,7 @@ export class Experience {
 
   constructor() {
     this.ui = new UI({
-      start: (mode) => this.start(mode),
+      start: (mode, narration) => this.start(mode, narration),
       home: () => this.home(),
       close: () => this.closePanels(),
       mute: () => this.audio.toggleMute(),
@@ -82,8 +83,8 @@ export class Experience {
     this.ui.progress(1); window.setTimeout(() => this.ui.ready(), 450)
   }
 
-  private start(mode: 'free' | 'guided') {
-    this.visitMode = mode
+  private start(mode: 'free' | 'guided', narration = true) {
+    this.visitMode = mode; this.automaticNarration = narration
     this.started = true; this.guided = mode === 'guided'; this.controls.enabled = !this.guided; this.ui.explore(); this.ui.setHomeControl(!this.guided)
     void this.audio.playAmbient(audioAssets.ambient.corridor)
     if (this.guided) { this.guidedSteps = this.createGuidedSteps(); this.ui.setGuidedTour(true); this.advanceGuidedStep() }
@@ -448,7 +449,8 @@ export class Experience {
     this.audio.stopNarration(); this.activeNarrationZone = zone; this.ui.setNarrationControl(zone >= 0)
     if (zone < 0) return
     const path = zone === 0 ? exhibitionContent.prologue.audio : zone <= chapters.length ? chapters[zone - 1].audio : exhibitionContent.finalHall.audio
-    this.audio.selectNarration(path); void this.audio.playNarration(path, false)
+    this.audio.selectNarration(path)
+    if (this.automaticNarration) void this.audio.playNarration(path, false)
     if (zone === chapters.length + 1) this.revealFinalHall()
   }
 
@@ -527,7 +529,7 @@ export class Experience {
     if (playAudio && this.visitMode === 'guided') {
       this.guided = true; this.controls.enabled = false; this.guidedSteps = this.createGuidedSteps(); this.ui.setHomeControl(false); this.ui.setGuidedTour(true); this.advanceGuidedStep(); void this.audio.playAmbient(audioAssets.ambient.corridor)
     } else if (playAudio) {
-      this.ui.setHomeControl(true); void this.audio.playNarration(exhibitionContent.prologue.audio); void this.audio.playAmbient(audioAssets.ambient.corridor)
+      this.ui.setHomeControl(true); if (this.automaticNarration) void this.audio.playNarration(exhibitionContent.prologue.audio); void this.audio.playAmbient(audioAssets.ambient.corridor)
     }
   }
   private resize() { this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); this.renderer.setSize(innerWidth, innerHeight) }
