@@ -3,9 +3,10 @@ import { Experience } from './core/Experience'
 
 async function start() {
   if ('fonts' in document) {
-    await Promise.allSettled([
-      document.fonts.load('600 46px "Be Vietnam Pro"'),
-      document.fonts.load('400 27px "Be Vietnam Pro"'),
+    await Promise.all([
+      document.fonts.load('400 27px "Be Vietnam Pro"', 'Tư tưởng Hồ Chí Minh'),
+      document.fonts.load('600 46px "Be Vietnam Pro"', 'Tư tưởng Hồ Chí Minh'),
+      document.fonts.load('700 46px "Be Vietnam Pro"', 'Tư tưởng Hồ Chí Minh'),
       document.fonts.ready
     ])
   }

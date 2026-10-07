@@ -33,6 +33,7 @@ export class Experience {
   private ambientZone: 'corridor' | 'final' = 'corridor'
   private mapMilestonePlayed = false
   private guided = false
+  private visitMode: 'free' | 'guided' = 'free'
   private guidedSteps: GuidedStep[] = []
   private guidedIndex = -1
   private guidedPhase: 'moving' | 'waiting' | 'rotating' = 'waiting'
@@ -51,6 +52,7 @@ export class Experience {
   constructor() {
     this.ui = new UI({
       start: (mode) => this.start(mode),
+      home: () => this.home(),
       close: () => this.closePanels(),
       mute: () => this.audio.toggleMute(),
       narration: () => this.toggleNarration(),
@@ -81,7 +83,8 @@ export class Experience {
   }
 
   private start(mode: 'free' | 'guided') {
-    this.started = true; this.guided = mode === 'guided'; this.controls.enabled = !this.guided; this.ui.explore()
+    this.visitMode = mode
+    this.started = true; this.guided = mode === 'guided'; this.controls.enabled = !this.guided; this.ui.explore(); this.ui.setHomeControl(!this.guided)
     void this.audio.playAmbient(audioAssets.ambient.corridor)
     if (this.guided) { this.guidedSteps = this.createGuidedSteps(); this.ui.setGuidedTour(true); this.advanceGuidedStep() }
   }
@@ -295,18 +298,7 @@ export class Experience {
 
   private exitGuided() {
     if (!this.guided) return
-    this.guided = false
-    this.guidedPhase = 'waiting'
-    this.guidedCurve = null
-    this.guidedSpeedMultiplier = 1
-    this.ui.setGuidedTour(false)
-    this.controls.setOrientation(this.camera.rotation.y, this.camera.rotation.x)
-    this.controls.enabled = true
-    void this.audio.fadeOutNarration(350)
-    this.activeNarrationZone = -1
-    this.updateChapter()
-    this.updateNarrationZone()
-    this.updateAmbient()
+    this.home()
   }
 
   private finishGuidedTour() {
@@ -521,14 +513,22 @@ export class Experience {
   }
   private closePanels() { this.ui.closePanels() }
   private openCredits() { this.ui.showCredits() }
-  private restart() {
+  private home() {
+    this.restart(false); this.started = false; this.controls.enabled = false; this.audio.reset(); this.audio.selectNarration(exhibitionContent.prologue.audio); this.ui.setHomeControl(false); this.ui.showHome()
+  }
+  private restart(playAudio = true) {
     this.finalTimers.forEach((timer) => window.clearTimeout(timer)); this.finalTimers = []
     this.camera.position.set(0, config.player.eyeHeight, 8); this.controls.reset(); this.audio.reset()
     this.currentChapter = -1; this.nearbyIndex = -1; this.boardCandidate = -1; this.activeNarrationZone = 0; this.finalStarted = false; this.mapMilestonePlayed = false; this.ambientZone = 'corridor'
     this.guided = false; this.guidedSteps = []; this.guidedIndex = -1; this.guidedPhase = 'waiting'; this.guidedVelocity.set(0, 0, 0); this.guidedWait = 0; this.guidedRotation = 0
     this.guidedCurve = null; this.guidedElapsed = 0; this.guidedSpeedMultiplier = 1
     this.renderer.toneMappingExposure = .78; this.museum.updateMap(0); this.museum.updateTransitionDoor(8, 1, true); this.museum.quadrantLights.forEach((light) => light.intensity = 0); this.ui.reset()
-    this.audio.selectNarration(exhibitionContent.prologue.audio); void this.audio.playNarration(exhibitionContent.prologue.audio); void this.audio.playAmbient(audioAssets.ambient.corridor)
+    this.audio.selectNarration(exhibitionContent.prologue.audio)
+    if (playAudio && this.visitMode === 'guided') {
+      this.guided = true; this.controls.enabled = false; this.guidedSteps = this.createGuidedSteps(); this.ui.setHomeControl(false); this.ui.setGuidedTour(true); this.advanceGuidedStep(); void this.audio.playAmbient(audioAssets.ambient.corridor)
+    } else if (playAudio) {
+      this.ui.setHomeControl(true); void this.audio.playNarration(exhibitionContent.prologue.audio); void this.audio.playAmbient(audioAssets.ambient.corridor)
+    }
   }
   private resize() { this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); this.renderer.setSize(innerWidth, innerHeight) }
 }

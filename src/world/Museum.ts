@@ -103,6 +103,12 @@ export class Museum {
 
   private sideX(side: 'left' | 'right', offset = 1.45) { return side === 'left' ? -offset : offset }
 
+  private artifactMaterial(artifact: Artifact) {
+    const texture = new THREE.TextureLoader().load(artifact.image)
+    texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4
+    return new THREE.MeshStandardMaterial({ map: texture, emissiveMap: texture, emissive: new THREE.Color('#3a3028'), emissiveIntensity: .28, roughness: .82, side: THREE.DoubleSide })
+  }
+
   private buildDeskExhibition(stage: Chapter, z: number, collisions: CollisionSystem) {
     const x = this.sideX(stage.exhibition.side, 1.2)
     const desk = this.mesh(new THREE.BoxGeometry(1.75, .12, 1.25), this.materials.floor, x, .82, z)
@@ -144,6 +150,7 @@ export class Museum {
     stage.artifacts.forEach((artifact, index) => {
       const documentZ = z + (index - 1) * 1.35
       const document = this.mesh(new THREE.BoxGeometry(.5, .04, .85), this.materials.paper, x, 1.03, documentZ)
+      const image = this.mesh(new THREE.PlaneGeometry(.48, .81), this.artifactMaterial(artifact), x, 1.055, documentZ); image.rotation.x = -Math.PI / 2
       this.interactives.push({ mesh: document, artifact })
       const label = textPlane(`${artifact.code}\n${artifact.title}\n${artifact.year}`, .82, .58, { size: 46, lineHeight: 54, background: '#211b17', align: 'center' })
       label.position.set(side === 'left' ? x + .4 : x - .4, .72, documentZ); label.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2; this.group.add(label)
@@ -172,6 +179,8 @@ export class Museum {
   private buildArchiveMount(artifact: Artifact, side: 'left' | 'right', z: number, y: number) {
     const x = side === 'left' ? -2.02 : 2.02
     const document = this.mesh(new THREE.BoxGeometry(.05, .7, .52), this.materials.paper, x, y, z)
+    const image = new THREE.Mesh(new THREE.PlaneGeometry(.48, .66), this.artifactMaterial(artifact))
+    image.position.set(side === 'left' ? x + .028 : x - .028, y, z); image.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2; this.group.add(image)
     const label = textPlane(`${artifact.code}\n${artifact.title}`, .82, .52, { size: 44, lineHeight: 52, background: '#211b17', align: 'center' })
     label.position.set(side === 'left' ? x + .03 : x - .03, y - .62, z); label.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2; this.group.add(label)
     this.interactives.push({ mesh: document, artifact })
@@ -180,7 +189,9 @@ export class Museum {
   private buildArtifactStand(artifact: Artifact, side: 'left' | 'right', z: number, collisions: CollisionSystem) {
     const x = this.sideX(side, 1.55)
     const base = this.mesh(new THREE.BoxGeometry(.8, .72, .75), this.materials.dark, x, .36, z)
-    const document = this.mesh(new THREE.BoxGeometry(.5, .7, .04), this.materials.paper, x, 1.1, z)
+    const document = this.mesh(new THREE.BoxGeometry(.04, .7, .5), this.materials.paper, x, 1.1, z)
+    const image = this.mesh(new THREE.PlaneGeometry(.46, .66), this.artifactMaterial(artifact), side === 'left' ? x + .021 : x - .021, 1.1, z)
+    image.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2
     this.interactives.push({ mesh: document, artifact }); collisions.addBox(x - .5, x + .5, z - .5, z + .5); base.castShadow = true
   }
 
@@ -192,8 +203,9 @@ export class Museum {
     const boardX = this.sideX(stage.board.side, 1.2); const exhibitX = this.sideX(stage.exhibition.side, 1.25)
     const boardLight = new THREE.SpotLight(config.colors.warm, stage.index === 4 ? 4 : 6, 7, .98, .82, 1.5)
     boardLight.position.set(-boardX * .2, 3.45, z); boardLight.target.position.set(boardX, 2.15, z)
-    const exhibitLight = new THREE.SpotLight(config.colors.warm, stage.index === 4 ? 5 : 9, 7, .7, .7, 1.4)
-    exhibitLight.position.set(-exhibitX * .15, 3.45, z); exhibitLight.target.position.set(exhibitX, .95, z)
+    const exhibitLight = new THREE.SpotLight(config.colors.warm, stage.index === 4 ? 5 : stage.index === 5 ? 13 : 9, 7, .7, .7, 1.4)
+    const exhibitZ = stage.exhibition.type === 'wall-timeline' ? z + 2.1 : z
+    exhibitLight.position.set(-exhibitX * .15, 3.45, exhibitZ); exhibitLight.target.position.set(exhibitX, stage.index === 5 ? 1.1 : .95, exhibitZ)
     exhibitLight.castShadow = stage.index === 1 || stage.index === 3; exhibitLight.shadow.mapSize.set(512, 512)
     this.group.add(boardLight, boardLight.target, exhibitLight, exhibitLight.target); this.chapterLights.push(boardLight, exhibitLight)
   }
